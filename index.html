@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home | Diabetic Retinopathy Prediction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --fg-primary: #f0f4f8;
+            --fg-secondary: #94a3b8;
+            --fg-muted: #64748b;
+            --accent-primary: #00d4aa;
+            --accent-secondary: #00b4d8;
+            --accent-glow: rgba(0, 212, 170, 0.3);
+            --border-color: rgba(100, 116, 139, 0.2);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --gradient-accent: linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Three.js Canvas */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Overlay gradient */
+        .overlay-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 30%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 70%, rgba(0, 180, 216, 0.08) 0%, transparent 50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3rem;
+            background: rgba(10, 15, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        .nav-links li a {
+            color: var(--fg-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links li a:hover {
+            color: var(--fg-primary);
+        }
+
+        .nav-links li a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links li a.active {
+            color: var(--accent-primary);
+        }
+
+        /* Hero Section */
+        .hero-center {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards 0.2s;
+        }
+
+        .hero-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            max-width: 900px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.3s;
+        }
+
+        .hero-title .gradient {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+            font-weight: 500;
+            color: var(--fg-secondary);
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.5s;
+        }
+
+        .hero-description {
+            font-size: 1rem;
+            color: var(--fg-muted);
+            max-width: 680px;
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.7s;
+        }
+
+        .hero-description strong {
+            color: var(--fg-primary);
+            font-weight: 600;
+        }
+
+        .hero-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2.25rem;
+            background: var(--gradient-accent);
+            color: var(--bg-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 25px var(--accent-glow);
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.9s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .hero-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px var(--accent-glow);
+        }
+
+        .hero-btn:hover::before {
+            left: 100%;
+        }
+
+        .hero-btn svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .hero-btn:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* Feature Cards Row */
+        .feature-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 4rem;
+            max-width: 900px;
+            width: 100%;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 1.1s;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(0, 212, 170, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card .icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .feature-card .icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent-primary);
+        }
+
+        .feature-card h4 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--fg-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--fg-muted);
+            line-height: 1.5;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+
+            .hero-center {
+                padding: 5rem 1.25rem 3rem;
+            }
+
+            .feature-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links li a {
+                font-size: 0.85rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .hero-badge {
+                font-size: 0.75rem;
+            }
+
+            .hero-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .hero-badge, .hero-title, .hero-subtitle, .hero-description, .hero-btn, .feature-row {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+<div class="overlay-gradient"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">DR_Predict_AI</div>
+  
+<ul class="nav-links">
+    <li><a href="/" class="active">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/predict">Prediction</a></li>
+    <li><a href="/performance">Performance</a></li>
+    <li><a href="/admin/login">Admin</a></li>
+</ul>
+    
+</nav>
+
+<!-- HERO SECTION -->
+<div class="hero-center">
+    
+    <div class="hero-badge">
+        <span class="dot"></span>
+        AI-Powered Diagnostic Tool
+    </div>
+
+    <h1 class="hero-title">
+        <span class="gradient">Diabetic Retinopathy</span><br>
+        Prediction System
+    </h1>
+
+    <p class="hero-subtitle">
+        AI-based retinal image analysis for early detection and severity grading
+    </p>
+
+    <p class="hero-description">
+        This web-based system leverages a <strong>hybrid deep learning model</strong>
+        to automatically classify retinal fundus images into different stages of
+        diabetic retinopathy. The project is developed as a
+        <strong>final-year academic solution</strong> with emphasis on accuracy,
+        interpretability, and real-time usability.
+    </p>
+
+    <a href="/predict" class="hero-btn">
+        Start Prediction
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+        </svg>
+    </a>
+
+    <!-- Feature Cards -->
+    <div class="feature-row">
+        <div class="feature-card">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h4>Hybrid CNN Model</h4>
+            <p>EfficientNetB0 + InceptionV3 architecture</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+            </div>
+            <h4>Real-Time Analysis</h4>
+            <p>Instant predictions with confidence scores</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <h4>High Accuracy</h4>
+            <p>Trained on APTOS 2019 dataset</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Three.js Script -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// Initialize variables first
+let scene, camera, renderer, particles, connections;
+let mouseX = 0, mouseY = 0;
+let targetMouseX = 0, targetMouseY = 0;
+const clock = new THREE.Clock();
+
+// Configuration
+const config = {
+    particleCount: 100,
+    connectionDistance: 150,
+    particleSize: 3,
+    colors: {
+        primary: new THREE.Color(0x00d4aa),
+        secondary: new THREE.Color(0x00b4d8),
+        background: new THREE.Color(0x0a0f1a)
+    }
+};
+
+// Particle data
+const particleData = [];
+
+function init() {
+    const canvas = document.getElementById('three-canvas');
+    
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = config.colors.background;
+    scene.fog = new THREE.FogExp2(0x0a0f1a, 0.0005);
+
+    // Camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+    camera.position.z = 700;
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true,
+        alpha: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Create particles
+    createParticles();
+    createConnections();
+
+    // Event listeners
+    window.addEventListener('resize', onWindowResize);
+    document.addEventListener('mousemove', onMouseMove);
+
+    // Start animation
+    animate();
+}
+
+function createParticles() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(config.particleCount * 3);
+    const colors = new Float32Array(config.particleCount * 3);
+    const sizes = new Float32Array(config.particleCount);
+
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Position - spread wider for hero section
+        positions[i3] = (Math.random() - 0.5) * window.innerWidth * 2;
+        positions[i3 + 1] = (Math.random() - 0.5) * window.innerHeight * 2;
+        positions[i3 + 2] = (Math.random() - 0.5) * 1200;
+
+        // Color gradient
+        const mixFactor = Math.random();
+        const color = config.colors.primary.clone().lerp(config.colors.secondary, mixFactor);
+        colors[i3] = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+
+        // Size
+        sizes[i] = Math.random() * config.particleSize + 1.5;
+
+        // Store particle data for animation
+        particleData.push({
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2,
+                (Math.random() - 0.5) * 0.2
+            ),
+            originalX: positions[i3],
+            originalY: positions[i3 + 1],
+            originalZ: positions[i3 + 2]
+        });
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    // Custom shader material
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: renderer.getPixelRatio() }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            uniform float uTime;
+            uniform float uPixelRatio;
+            
+            void main() {
+                vColor = color;
+                vec3 pos = position;
+                pos.y += sin(uTime * 0.3 + position.x * 0.006) * 10.0;
+                pos.x += cos(uTime * 0.2 + position.y * 0.006) * 10.0;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_PointSize = size * uPixelRatio * (400.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            
+            void main() {
+                float dist = length(gl_PointCoord - vec2(0.5));
+                if (dist > 0.5) discard;
+                
+                float alpha = 1.0 - smoothstep(0.1, 0.5, dist);
+                vec3 glow = vColor * 1.5;
+                gl_FragColor = vec4(mix(vColor, glow, alpha * 0.5), alpha * 0.7);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createConnections() {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00d4aa,
+        transparent: true,
+        opacity: 0.1,
+        blending: THREE.AdditiveBlending
+    });
+
+    connections = new THREE.LineSegments(geometry, material);
+    scene.add(connections);
+}
+
+function updateConnections() {
+    const positions = particles.geometry.attributes.position.array;
+    const linePositions = [];
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const x1 = positions[i3];
+        const y1 = positions[i3 + 1];
+        const z1 = positions[i3 + 2];
+
+        for (let j = i + 1; j < config.particleCount; j++) {
+            const j3 = j * 3;
+            const x2 = positions[j3];
+            const y2 = positions[j3 + 1];
+            const z2 = positions[j3 + 2];
+
+            const distance = Math.sqrt(
+                Math.pow(x2 - x1, 2) +
+                Math.pow(y2 - y1, 2) +
+                Math.pow(z2 - z1, 2)
+            );
+
+            if (distance < config.connectionDistance) {
+                linePositions.push(x1, y1, z1, x2, y2, z2);
+            }
+        }
+    }
+
+    connections.geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(linePositions), 3)
+    );
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(event) {
+    targetMouseX = (event.clientX - window.innerWidth / 2) * 0.3;
+    targetMouseY = (event.clientY - window.innerHeight / 2) * 0.3;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = clock.getElapsedTime();
+    
+    // Smooth mouse follow
+    mouseX += (targetMouseX - mouseX) * 0.01;
+    mouseY += (targetMouseY - mouseY) * 0.01;
+
+    // Update particle positions
+    const positions = particles.geometry.attributes.position.array;
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const data = particleData[i];
+
+        // Add subtle movement
+        positions[i3] += data.velocity.x;
+        positions[i3 + 1] += data.velocity.y;
+        positions[i3 + 2] += data.velocity.z;
+
+        // Boundary check
+        const bounds = 1000;
+        if (Math.abs(positions[i3]) > bounds) data.velocity.x *= -1;
+        if (Math.abs(positions[i3 + 1]) > bounds) data.velocity.y *= -1;
+        if (Math.abs(positions[i3 + 2]) > bounds) data.velocity.z *= -1;
+    }
+
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.material.uniforms.uTime.value = time;
+
+    // Update connections every few frames for performance
+    if (Math.floor(time * 30) % 3 === 0) {
+        updateConnections();
+    }
+
+    // Camera movement
+    camera.position.x += (mouseX * 0.06 - camera.position.x) * 0.01;
+    camera.position.y += (-mouseY * 0.06 - camera.position.y) * 0.01;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+
+// Initialize when DOM is ready
+init();
+</script>
+
+</body>
+</html>
