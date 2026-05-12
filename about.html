@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About | Diabetic Retinopathy Severity Grading</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --fg-primary: #f0f4f8;
+            --fg-secondary: #94a3b8;
+            --fg-muted: #64748b;
+            --accent-primary: #00d4aa;
+            --accent-secondary: #00b4d8;
+            --accent-glow: rgba(0, 212, 170, 0.3);
+            --border-color: rgba(100, 116, 139, 0.2);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --gradient-accent: linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            line-height: 1.7;
+        }
+
+        /* Three.js Canvas */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Overlay gradient */
+        .overlay-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 180, 216, 0.06) 0%, transparent 50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3rem;
+            background: rgba(10, 15, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        .nav-links li a {
+            color: var(--fg-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links li a:hover {
+            color: var(--fg-primary);
+        }
+
+        .nav-links li a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links li a.active {
+            color: var(--accent-primary);
+        }
+
+        /* Page Content */
+        .page-content {
+            position: relative;
+            z-index: 10;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 8rem 2rem 4rem;
+        }
+
+        /* Hero Title */
+        .hero-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 3rem;
+            line-height: 1.3;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .hero-title span {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Content Cards */
+        .content-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .content-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .content-card:hover {
+            border-color: rgba(0, 212, 170, 0.3);
+            box-shadow: 0 0 40px rgba(0, 212, 170, 0.08);
+        }
+
+        .content-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .content-card h3 .icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .content-card h3 .icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--accent-primary);
+        }
+
+        .content-card h3 span {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .content-card p {
+            color: var(--fg-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .content-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .content-card strong {
+            color: var(--fg-primary);
+            font-weight: 600;
+        }
+
+        /* Lists */
+        .styled-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .styled-list li {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--fg-secondary);
+            font-size: 0.95rem;
+        }
+
+        .styled-list li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.6em;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .styled-list.ordered {
+            counter-reset: item;
+        }
+
+        .styled-list.ordered li::before {
+            counter-increment: item;
+            content: counter(item);
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 212, 170, 0.15);
+            border-radius: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            top: 0.15em;
+            box-shadow: none;
+        }
+
+        /* Tech Tags */
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .tech-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 180, 216, 0.1);
+            border: 1px solid rgba(0, 180, 216, 0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--accent-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .tech-tag:hover {
+            background: rgba(0, 180, 216, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+
+            .page-content {
+                padding: 7rem 1.25rem 3rem;
+            }
+
+            .content-card {
+                padding: 1.5rem;
+            }
+
+            .content-card h3 {
+                font-size: 1.15rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links li a {
+                font-size: 0.85rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .tech-tags {
+                flex-direction: column;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .content-card {
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+<div class="overlay-gradient"></div>
+
+<nav class="navbar">
+    <div class="logo">DR_Predict_AI</div>
+    <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/about" class="active">About</a></li>
+    <li><a href="/predict">Prediction</a></li>
+    <li><a href="/performance">Performance</a></li>
+    <li><a href="/admin/login">Admin</a></li>
+</ul>
+</nav>
+
+<div class="page-content">
+
+    <h2 class="hero-title">
+        <span>Diabetic Retinopathy Severity Grading</span><br>
+        from Fundus Photographs
+    </h2>
+
+    <!-- Abstract -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+            </span>
+            <span>Abstract</span>
+        </h3>
+        <p>
+            Diabetic Retinopathy (DR) is a diabetes-induced retinal disorder and one of the
+            major causes of preventable blindness worldwide. Early detection and accurate
+            severity grading play a vital role in preventing permanent vision loss.
+            This project presents an automated deep learning-based system to classify
+            diabetic retinopathy severity from retinal fundus images using a hybrid
+            convolutional neural network model.
+        </p>
+    </div>
+
+    <!-- Existing System -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+            </span>
+            <span>Existing System</span>
+        </h3>
+        <p>
+            In the existing system, diabetic retinopathy diagnosis is performed manually
+            by ophthalmologists through visual inspection of retinal fundus images.
+            This process is time-consuming, subjective, and requires high expertise.
+            Due to the increasing number of diabetic patients, manual screening is not
+            scalable and may lead to delayed diagnosis.
+        </p>
+    </div>
+
+    <!-- Proposed System -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+            </span>
+            <span>Proposed System</span>
+        </h3>
+        <p>
+            The proposed system automates diabetic retinopathy severity grading using
+            deep learning techniques. A hybrid CNN model is employed to extract robust
+            retinal features and classify fundus images into five severity levels.
+            The system is deployed as a web-based application using Flask, enabling
+            real-time prediction through a user-friendly interface.
+        </p>
+    </div>
+
+    <!-- Dataset Description -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                </svg>
+            </span>
+            <span>Dataset Description</span>
+        </h3>
+        <p>
+            The model is trained and evaluated using the <strong>APTOS 2019 Blindness Detection
+            dataset</strong>. The dataset contains high-resolution retinal fundus images
+            categorized into five classes: No DR, Mild, Moderate, Severe, and Proliferative DR.
+        </p>
+    </div>
+
+    <!-- Methodology -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+            </span>
+            <span>Methodology</span>
+        </h3>
+        <ol class="styled-list ordered">
+            <li>Data collection and labeling from APTOS 2019 dataset</li>
+            <li>Image preprocessing and resizing</li>
+            <li>Data augmentation</li>
+            <li>Hybrid CNN feature extraction</li>
+            <li>Model training and evaluation</li>
+        </ol>
+    </div>
+
+    <!-- Model Architecture -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+                    <rect x="9" y="9" width="6" height="6"/>
+                    <line x1="9" y1="1" x2="9" y2="4"/>
+                    <line x1="15" y1="1" x2="15" y2="4"/>
+                    <line x1="9" y1="20" x2="9" y2="23"/>
+                    <line x1="15" y1="20" x2="15" y2="23"/>
+                    <line x1="20" y1="9" x2="23" y2="9"/>
+                    <line x1="20" y1="14" x2="23" y2="14"/>
+                    <line x1="1" y1="9" x2="4" y2="9"/>
+                    <line x1="1" y1="14" x2="4" y2="14"/>
+                </svg>
+            </span>
+            <span>Model Architecture</span>
+        </h3>
+        <div class="tech-tags">
+            <span class="tech-tag">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                EfficientNetB0
+            </span>
+            <span class="tech-tag">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                InceptionV3
+            </span>
+        </div>
+        <ul class="styled-list" style="margin-top: 1rem;">
+            <li><strong>EfficientNetB0</strong> – fine-grained feature extraction</li>
+            <li><strong>InceptionV3</strong> – multi-scale feature learning</li>
+        </ul>
+    </div>
+
+    <!-- Advantages -->
+    <div class="content-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </span>
+            <span>Advantages</span>
+        </h3>
+        <ul class="styled-list">
+            <li>Fast and automated DR grading</li>
+            <li>High accuracy and consistency</li>
+            <li>User-friendly interface</li>
+        </ul>
+    </div>
+
+</div>
+
+<!-- Three.js Script -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// Initialize variables first
+let scene, camera, renderer, particles, connections;
+let mouseX = 0, mouseY = 0;
+let targetMouseX = 0, targetMouseY = 0;
+const clock = new THREE.Clock();
+
+// Configuration
+const config = {
+    particleCount: 120,
+    connectionDistance: 140,
+    particleSize: 2.5,
+    colors: {
+        primary: new THREE.Color(0x00d4aa),
+        secondary: new THREE.Color(0x00b4d8),
+        background: new THREE.Color(0x0a0f1a)
+    }
+};
+
+// Particle data
+const particleData = [];
+
+function init() {
+    const canvas = document.getElementById('three-canvas');
+    
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = config.colors.background;
+    scene.fog = new THREE.FogExp2(0x0a0f1a, 0.0006);
+
+    // Camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+    camera.position.z = 600;
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true,
+        alpha: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Create particles
+    createParticles();
+    createConnections();
+
+    // Event listeners
+    window.addEventListener('resize', onWindowResize);
+    document.addEventListener('mousemove', onMouseMove);
+
+    // Start animation
+    animate();
+}
+
+function createParticles() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(config.particleCount * 3);
+    const colors = new Float32Array(config.particleCount * 3);
+    const sizes = new Float32Array(config.particleCount);
+
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Position
+        positions[i3] = (Math.random() - 0.5) * window.innerWidth * 1.8;
+        positions[i3 + 1] = (Math.random() - 0.5) * window.innerHeight * 1.8;
+        positions[i3 + 2] = (Math.random() - 0.5) * 1000;
+
+        // Color gradient
+        const mixFactor = Math.random();
+        const color = config.colors.primary.clone().lerp(config.colors.secondary, mixFactor);
+        colors[i3] = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+
+        // Size
+        sizes[i] = Math.random() * config.particleSize + 1;
+
+        // Store particle data for animation
+        particleData.push({
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25
+            ),
+            originalX: positions[i3],
+            originalY: positions[i3 + 1],
+            originalZ: positions[i3 + 2]
+        });
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    // Custom shader material
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: renderer.getPixelRatio() }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            uniform float uTime;
+            uniform float uPixelRatio;
+            
+            void main() {
+                vColor = color;
+                vec3 pos = position;
+                pos.y += sin(uTime * 0.4 + position.x * 0.008) * 8.0;
+                pos.x += cos(uTime * 0.25 + position.y * 0.008) * 8.0;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_PointSize = size * uPixelRatio * (350.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            
+            void main() {
+                float dist = length(gl_PointCoord - vec2(0.5));
+                if (dist > 0.5) discard;
+                
+                float alpha = 1.0 - smoothstep(0.15, 0.5, dist);
+                vec3 glow = vColor * 1.5;
+                gl_FragColor = vec4(mix(vColor, glow, alpha * 0.5), alpha * 0.75);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createConnections() {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00d4aa,
+        transparent: true,
+        opacity: 0.12,
+        blending: THREE.AdditiveBlending
+    });
+
+    connections = new THREE.LineSegments(geometry, material);
+    scene.add(connections);
+}
+
+function updateConnections() {
+    const positions = particles.geometry.attributes.position.array;
+    const linePositions = [];
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const x1 = positions[i3];
+        const y1 = positions[i3 + 1];
+        const z1 = positions[i3 + 2];
+
+        for (let j = i + 1; j < config.particleCount; j++) {
+            const j3 = j * 3;
+            const x2 = positions[j3];
+            const y2 = positions[j3 + 1];
+            const z2 = positions[j3 + 2];
+
+            const distance = Math.sqrt(
+                Math.pow(x2 - x1, 2) +
+                Math.pow(y2 - y1, 2) +
+                Math.pow(z2 - z1, 2)
+            );
+
+            if (distance < config.connectionDistance) {
+                linePositions.push(x1, y1, z1, x2, y2, z2);
+            }
+        }
+    }
+
+    connections.geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(linePositions), 3)
+    );
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(event) {
+    targetMouseX = (event.clientX - window.innerWidth / 2) * 0.4;
+    targetMouseY = (event.clientY - window.innerHeight / 2) * 0.4;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = clock.getElapsedTime();
+    
+    // Smooth mouse follow
+    mouseX += (targetMouseX - mouseX) * 0.015;
+    mouseY += (targetMouseY - mouseY) * 0.015;
+
+    // Update particle positions
+    const positions = particles.geometry.attributes.position.array;
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const data = particleData[i];
+
+        // Add subtle movement
+        positions[i3] += data.velocity.x;
+        positions[i3 + 1] += data.velocity.y;
+        positions[i3 + 2] += data.velocity.z;
+
+        // Boundary check
+        const bounds = 900;
+        if (Math.abs(positions[i3]) > bounds) data.velocity.x *= -1;
+        if (Math.abs(positions[i3 + 1]) > bounds) data.velocity.y *= -1;
+        if (Math.abs(positions[i3 + 2]) > bounds) data.velocity.z *= -1;
+    }
+
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.material.uniforms.uTime.value = time;
+
+    // Update connections every few frames for performance
+    if (Math.floor(time * 30) % 3 === 0) {
+        updateConnections();
+    }
+
+    // Camera movement
+    camera.position.x += (mouseX * 0.08 - camera.position.x) * 0.015;
+    camera.position.y += (-mouseY * 0.08 - camera.position.y) * 0.015;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+
+// Initialize when DOM is ready
+init();
+
+// Scroll Reveal Animation
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, observerOptions);
+
+document.querySelectorAll('.content-card').forEach(card => {
+    observer.observe(card);
+});
+</script>
+
+</body>
+</html>
