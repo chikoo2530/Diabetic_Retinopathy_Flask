@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Performance | DR_Predict_AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --fg-primary: #f0f4f8;
+            --fg-secondary: #94a3b8;
+            --fg-muted: #64748b;
+            --accent-primary: #00d4aa;
+            --accent-secondary: #00b4d8;
+            --accent-glow: rgba(0, 212, 170, 0.3);
+            --border-color: rgba(100, 116, 139, 0.2);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --gradient-accent: linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Three.js Canvas */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Overlay gradient */
+        .overlay-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 180, 216, 0.06) 0%, transparent 50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3rem;
+            background: rgba(10, 15, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        .nav-links li a {
+            color: var(--fg-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links li a:hover {
+            color: var(--fg-primary);
+        }
+
+        .nav-links li a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links li a.active {
+            color: var(--accent-primary);
+        }
+
+        /* Page Content */
+        .page-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 8rem 2rem 4rem;
+        }
+
+        .page-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(2rem, 4vw, 2.75rem);
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .page-title span {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Performance Grid */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Accuracy Card */
+        .accuracy-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .accuracy-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(0, 212, 170, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .accuracy-card:hover::before {
+            opacity: 1;
+        }
+
+        .accuracy-card:hover {
+            border-color: rgba(0, 212, 170, 0.3);
+        }
+
+        .circular-progress {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin-bottom: 1.5rem;
+        }
+
+        .circular-progress svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .circular-progress .bg-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 12;
+        }
+
+        .circular-progress .progress-circle {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 502;
+            stroke-dashoffset: 502;
+            animation: progressAnim 2s ease forwards 0.8s;
+        }
+
+        @keyframes progressAnim {
+            to {
+                stroke-dashoffset: 5; /* 99% of 502 */
+            }
+        }
+
+        .progress-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .accuracy-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--fg-primary);
+        }
+
+        .accuracy-sub {
+            font-size: 0.9rem;
+            color: var(--fg-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Metrics Panel */
+        .metrics-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .metric-card:nth-child(1) { animation-delay: 0.3s; }
+        .metric-card:nth-child(2) { animation-delay: 0.4s; }
+        .metric-card:nth-child(3) { animation-delay: 0.5s; }
+        .metric-card:nth-child(4) { animation-delay: 0.6s; }
+
+        .metric-card:hover {
+            border-color: rgba(0, 212, 170, 0.3);
+            transform: translateX(5px);
+        }
+
+        .metric-icon {
+            width: 44px;
+            height: 44px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .metric-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: var(--accent-primary);
+        }
+
+        .metric-info {
+            flex: 1;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--fg-primary);
+        }
+
+        /* Categories Card */
+        .categories-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.7s;
+        }
+
+        .categories-card h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .categories-card h3 .icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 180, 216, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .categories-card h3 .icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--accent-secondary);
+        }
+
+        .categories-card h3 span {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+        }
+
+        .category-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem 0.75rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .category-item:hover::before {
+            transform: scaleX(1);
+        }
+
+        .category-item:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 212, 170, 0.3);
+            background: rgba(0, 212, 170, 0.05);
+        }
+
+        .category-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .category-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--fg-primary);
+            line-height: 1.3;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .performance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .accuracy-card {
+                padding: 2rem;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+
+            .page-content {
+                padding: 7rem 1.25rem 3rem;
+            }
+
+            .categories-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .category-item:last-child:nth-child(odd) {
+                grid-column: span 2;
+            }
+
+            .circular-progress {
+                width: 150px;
+                height: 150px;
+            }
+
+            .progress-value {
+                font-size: 2.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links li a {
+                font-size: 0.85rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .page-title, .accuracy-card, .metric-card, .categories-card {
+                opacity: 1;
+            }
+
+            .circular-progress .progress-circle {
+                stroke-dashoffset: 5;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+<div class="overlay-gradient"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">DR_Predict_AI</div>
+    <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="/about">About</a></li>
+    <li><a href="/predict">Prediction</a></li>
+    <li><a href="/performance" class="active">Performance</a></li>
+    <li><a href="/admin/login">Admin</a></li>
+</ul>
+</nav>
+
+<div class="page-content">
+
+    <h2 class="page-title"><span>Model Performance</span></h2>
+
+    <div class="performance-grid">
+        <!-- Accuracy Card -->
+        <div class="accuracy-card">
+            <div class="circular-progress">
+                <svg viewBox="0 0 180 180">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#00d4aa"/>
+                            <stop offset="100%" style="stop-color:#00b4d8"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="bg-circle" cx="90" cy="90" r="80"/>
+                    <circle class="progress-circle" cx="90" cy="90" r="80"/>
+                </svg>
+                <div class="progress-value">99%</div>
+            </div>
+            <div class="accuracy-label">Overall Accuracy</div>
+            <div class="accuracy-sub">Hybrid CNN Model</div>
+        </div>
+
+        <!-- Metrics Panel -->
+        <div class="metrics-panel">
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-label">Dataset</div>
+                    <div class="metric-value">APTOS 2019 Blindness Detection</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-label">Training Epochs</div>
+                    <div class="metric-value">28 Iterations</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-label">Optimizer</div>
+                    <div class="metric-value">Adam</div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+                <div class="metric-info">
+                    <div class="metric-label">Loss Function</div>
+                    <div class="metric-value">Categorical Crossentropy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Categories -->
+    <div class="categories-card">
+        <h3>
+            <span class="icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+            </span>
+            <span>Classification Categories</span>
+        </h3>
+        <div class="categories-grid">
+            <div class="category-item">
+                <div class="category-number">Class 0</div>
+                <div class="category-name">No DR</div>
+            </div>
+            <div class="category-item">
+                <div class="category-number">Class 1</div>
+                <div class="category-name">Mild</div>
+            </div>
+            <div class="category-item">
+                <div class="category-number">Class 2</div>
+                <div class="category-name">Moderate</div>
+            </div>
+            <div class="category-item">
+                <div class="category-number">Class 3</div>
+                <div class="category-name">Severe</div>
+            </div>
+            <div class="category-item">
+                <div class="category-number">Class 4</div>
+                <div class="category-name">Proliferative DR</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Three.js Script -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// Initialize variables first
+let scene, camera, renderer, particles, connections;
+let mouseX = 0, mouseY = 0;
+let targetMouseX = 0, targetMouseY = 0;
+const clock = new THREE.Clock();
+
+// Configuration
+const config = {
+    particleCount: 100,
+    connectionDistance: 140,
+    particleSize: 2.5,
+    colors: {
+        primary: new THREE.Color(0x00d4aa),
+        secondary: new THREE.Color(0x00b4d8),
+        background: new THREE.Color(0x0a0f1a)
+    }
+};
+
+// Particle data
+const particleData = [];
+
+function init() {
+    const canvas = document.getElementById('three-canvas');
+    
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = config.colors.background;
+    scene.fog = new THREE.FogExp2(0x0a0f1a, 0.0006);
+
+    // Camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+    camera.position.z = 600;
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true,
+        alpha: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Create particles
+    createParticles();
+    createConnections();
+
+    // Event listeners
+    window.addEventListener('resize', onWindowResize);
+    document.addEventListener('mousemove', onMouseMove);
+
+    // Start animation
+    animate();
+}
+
+function createParticles() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(config.particleCount * 3);
+    const colors = new Float32Array(config.particleCount * 3);
+    const sizes = new Float32Array(config.particleCount);
+
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Position
+        positions[i3] = (Math.random() - 0.5) * window.innerWidth * 1.8;
+        positions[i3 + 1] = (Math.random() - 0.5) * window.innerHeight * 1.8;
+        positions[i3 + 2] = (Math.random() - 0.5) * 1000;
+
+        // Color gradient
+        const mixFactor = Math.random();
+        const color = config.colors.primary.clone().lerp(config.colors.secondary, mixFactor);
+        colors[i3] = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+
+        // Size
+        sizes[i] = Math.random() * config.particleSize + 1;
+
+        // Store particle data for animation
+        particleData.push({
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25
+            ),
+            originalX: positions[i3],
+            originalY: positions[i3 + 1],
+            originalZ: positions[i3 + 2]
+        });
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    // Custom shader material
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: renderer.getPixelRatio() }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            uniform float uTime;
+            uniform float uPixelRatio;
+            
+            void main() {
+                vColor = color;
+                vec3 pos = position;
+                pos.y += sin(uTime * 0.4 + position.x * 0.008) * 8.0;
+                pos.x += cos(uTime * 0.25 + position.y * 0.008) * 8.0;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_PointSize = size * uPixelRatio * (350.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            
+            void main() {
+                float dist = length(gl_PointCoord - vec2(0.5));
+                if (dist > 0.5) discard;
+                
+                float alpha = 1.0 - smoothstep(0.15, 0.5, dist);
+                vec3 glow = vColor * 1.5;
+                gl_FragColor = vec4(mix(vColor, glow, alpha * 0.5), alpha * 0.75);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createConnections() {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00d4aa,
+        transparent: true,
+        opacity: 0.12,
+        blending: THREE.AdditiveBlending
+    });
+
+    connections = new THREE.LineSegments(geometry, material);
+    scene.add(connections);
+}
+
+function updateConnections() {
+    const positions = particles.geometry.attributes.position.array;
+    const linePositions = [];
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const x1 = positions[i3];
+        const y1 = positions[i3 + 1];
+        const z1 = positions[i3 + 2];
+
+        for (let j = i + 1; j < config.particleCount; j++) {
+            const j3 = j * 3;
+            const x2 = positions[j3];
+            const y2 = positions[j3 + 1];
+            const z2 = positions[j3 + 2];
+
+            const distance = Math.sqrt(
+                Math.pow(x2 - x1, 2) +
+                Math.pow(y2 - y1, 2) +
+                Math.pow(z2 - z1, 2)
+            );
+
+            if (distance < config.connectionDistance) {
+                linePositions.push(x1, y1, z1, x2, y2, z2);
+            }
+        }
+    }
+
+    connections.geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(linePositions), 3)
+    );
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(event) {
+    targetMouseX = (event.clientX - window.innerWidth / 2) * 0.4;
+    targetMouseY = (event.clientY - window.innerHeight / 2) * 0.4;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = clock.getElapsedTime();
+    
+    // Smooth mouse follow
+    mouseX += (targetMouseX - mouseX) * 0.015;
+    mouseY += (targetMouseY - mouseY) * 0.015;
+
+    // Update particle positions
+    const positions = particles.geometry.attributes.position.array;
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const data = particleData[i];
+
+        // Add subtle movement
+        positions[i3] += data.velocity.x;
+        positions[i3 + 1] += data.velocity.y;
+        positions[i3 + 2] += data.velocity.z;
+
+        // Boundary check
+        const bounds = 900;
+        if (Math.abs(positions[i3]) > bounds) data.velocity.x *= -1;
+        if (Math.abs(positions[i3 + 1]) > bounds) data.velocity.y *= -1;
+        if (Math.abs(positions[i3 + 2]) > bounds) data.velocity.z *= -1;
+    }
+
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.material.uniforms.uTime.value = time;
+
+    // Update connections every few frames for performance
+    if (Math.floor(time * 30) % 3 === 0) {
+        updateConnections();
+    }
+
+    // Camera movement
+    camera.position.x += (mouseX * 0.08 - camera.position.x) * 0.015;
+    camera.position.y += (-mouseY * 0.08 - camera.position.y) * 0.015;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+
+// Initialize when DOM is ready
+init();
+</script>
+
+</body>
+</html>
