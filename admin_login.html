@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | DR_Predict_AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --fg-primary: #f0f4f8;
+            --fg-secondary: #94a3b8;
+            --fg-muted: #64748b;
+            --accent-primary: #00d4aa;
+            --accent-secondary: #00b4d8;
+            --accent-glow: rgba(0, 212, 170, 0.3);
+            --border-color: rgba(100, 116, 139, 0.2);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --gradient-accent: linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
+            --error-color: #f87171;
+            --error-bg: rgba(248, 113, 113, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .overlay-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 50% 50%, rgba(0, 212, 170, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 180, 216, 0.05) 0%, transparent 50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3rem;
+            background: rgba(10, 15, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        .nav-links li a {
+            color: var(--fg-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links li a:hover {
+            color: var(--fg-primary);
+        }
+
+        .nav-links li a:hover::after {
+            width: 100%;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6rem 2rem 4rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 3rem 2.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-accent);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .lock-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+            position: relative;
+        }
+
+        .lock-icon-wrapper::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            animation: pulseRing 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.5; }
+        }
+
+        .lock-icon-wrapper svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--accent-primary);
+        }
+
+        .login-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--fg-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--fg-muted);
+        }
+
+        .error-message {
+            background: var(--error-bg);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .error-message svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--error-color);
+            flex-shrink: 0;
+        }
+
+        .error-message span {
+            font-size: 0.9rem;
+            color: var(--error-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--fg-secondary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            stroke: var(--fg-muted);
+            transition: stroke 0.3s ease;
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem 1rem 1rem 3rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: var(--fg-primary);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-input::placeholder {
+            color: var(--fg-muted);
+        }
+
+        .form-input:hover {
+            border-color: var(--fg-muted);
+        }
+
+        .form-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            background: rgba(0, 212, 170, 0.03);
+        }
+
+        .form-input:focus + .input-icon,
+        .input-wrapper:focus-within .input-icon {
+            stroke: var(--accent-primary);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: var(--gradient-accent);
+            border: none;
+            border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--accent-glow);
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+            color: var(--fg-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards 0.5s;
+        }
+
+        .back-link:hover {
+            color: var(--accent-primary);
+        }
+
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-links {
+                gap: 1.5rem;
+            }
+
+            .login-container {
+                padding: 5rem 1.25rem 3rem;
+            }
+
+            .login-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .login-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links li a {
+                font-size: 0.85rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .login-card, .back-link {
+                opacity: 1;
+            }
+
+            @keyframes shake {
+                0%, 100% { transform: none; }
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+<div class="overlay-gradient"></div>
+
+<nav class="navbar">
+    <div class="logo">DR_Predict_AI</div>
+    <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/predict">Prediction</a></li>
+    </ul>
+</nav>
+
+<div class="login-container">
+
+    <div class="login-card">
+        <div class="login-header">
+            <div class="lock-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+            <h2 class="login-title">Admin Login</h2>
+            <p class="login-subtitle">Secure access to the dashboard</p>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <div class="input-wrapper">
+                    <input type="text" 
+                           id="username"
+                           name="username" 
+                           class="form-input" 
+                           placeholder="Enter your username" 
+                           required 
+                           autocomplete="username">
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" 
+                           id="password"
+                           name="password" 
+                           class="form-input" 
+                           placeholder="Enter your password" 
+                           required 
+                           autocomplete="current-password">
+                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Sign In
+            </button>
+        </form>
+    </div>
+
+    <a href="/" class="back-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Back to Home
+    </a>
+
+</div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+let scene, camera, renderer, particles, connections;
+let mouseX = 0, mouseY = 0;
+let targetMouseX = 0, targetMouseY = 0;
+const clock = new THREE.Clock();
+
+const config = {
+    particleCount: 80,
+    connectionDistance: 130,
+    particleSize: 2.5,
+    colors: {
+        primary: new THREE.Color(0x00d4aa),
+        secondary: new THREE.Color(0x00b4d8),
+        background: new THREE.Color(0x0a0f1a)
+    }
+};
+
+const particleData = [];
+
+function init() {
+    const canvas = document.getElementById('three-canvas');
+    
+    scene = new THREE.Scene();
+    scene.background = config.colors.background;
+    scene.fog = new THREE.FogExp2(0x0a0f1a, 0.0006);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+    camera.position.z = 600;
+
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true,
+        alpha: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    createParticles();
+    createConnections();
+
+    window.addEventListener('resize', onWindowResize);
+    document.addEventListener('mousemove', onMouseMove);
+
+    animate();
+}
+
+function createParticles() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(config.particleCount * 3);
+    const colors = new Float32Array(config.particleCount * 3);
+    const sizes = new Float32Array(config.particleCount);
+
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        
+        positions[i3] = (Math.random() - 0.5) * window.innerWidth * 1.8;
+        positions[i3 + 1] = (Math.random() - 0.5) * window.innerHeight * 1.8;
+        positions[i3 + 2] = (Math.random() - 0.5) * 1000;
+
+        const mixFactor = Math.random();
+        const color = config.colors.primary.clone().lerp(config.colors.secondary, mixFactor);
+        colors[i3] = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+
+        sizes[i] = Math.random() * config.particleSize + 1;
+
+        particleData.push({
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25
+            ),
+            originalX: positions[i3],
+            originalY: positions[i3 + 1],
+            originalZ: positions[i3 + 2]
+        });
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: renderer.getPixelRatio() }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            uniform float uTime;
+            uniform float uPixelRatio;
+            
+            void main() {
+                vColor = color;
+                vec3 pos = position;
+                pos.y += sin(uTime * 0.4 + position.x * 0.008) * 8.0;
+                pos.x += cos(uTime * 0.25 + position.y * 0.008) * 8.0;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_PointSize = size * uPixelRatio * (350.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            
+            void main() {
+                float dist = length(gl_PointCoord - vec2(0.5));
+                if (dist > 0.5) discard;
+                
+                float alpha = 1.0 - smoothstep(0.15, 0.5, dist);
+                vec3 glow = vColor * 1.5;
+                gl_FragColor = vec4(mix(vColor, glow, alpha * 0.5), alpha * 0.75);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createConnections() {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00d4aa,
+        transparent: true,
+        opacity: 0.12,
+        blending: THREE.AdditiveBlending
+    });
+
+    connections = new THREE.LineSegments(geometry, material);
+    scene.add(connections);
+}
+
+function updateConnections() {
+    const positions = particles.geometry.attributes.position.array;
+    const linePositions = [];
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const x1 = positions[i3];
+        const y1 = positions[i3 + 1];
+        const z1 = positions[i3 + 2];
+
+        for (let j = i + 1; j < config.particleCount; j++) {
+            const j3 = j * 3;
+            const x2 = positions[j3];
+            const y2 = positions[j3 + 1];
+            const z2 = positions[j3 + 2];
+
+            const distance = Math.sqrt(
+                Math.pow(x2 - x1, 2) +
+                Math.pow(y2 - y1, 2) +
+                Math.pow(z2 - z1, 2)
+            );
+
+            if (distance < config.connectionDistance) {
+                linePositions.push(x1, y1, z1, x2, y2, z2);
+            }
+        }
+    }
+
+    connections.geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(linePositions), 3)
+    );
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(event) {
+    targetMouseX = (event.clientX - window.innerWidth / 2) * 0.4;
+    targetMouseY = (event.clientY - window.innerHeight / 2) * 0.4;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = clock.getElapsedTime();
+    
+    mouseX += (targetMouseX - mouseX) * 0.015;
+    mouseY += (targetMouseY - mouseY) * 0.015;
+
+    const positions = particles.geometry.attributes.position.array;
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const data = particleData[i];
+
+        positions[i3] += data.velocity.x;
+        positions[i3 + 1] += data.velocity.y;
+        positions[i3 + 2] += data.velocity.z;
+
+        const bounds = 900;
+        if (Math.abs(positions[i3]) > bounds) data.velocity.x *= -1;
+        if (Math.abs(positions[i3 + 1]) > bounds) data.velocity.y *= -1;
+        if (Math.abs(positions[i3 + 2]) > bounds) data.velocity.z *= -1;
+    }
+
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.material.uniforms.uTime.value = time;
+
+    if (Math.floor(time * 30) % 3 === 0) {
+        updateConnections();
+    }
+
+    camera.position.x += (mouseX * 0.08 - camera.position.x) * 0.015;
+    camera.position.y += (-mouseY * 0.08 - camera.position.y) * 0.015;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+
+init();
+</script>
+
+</body>
+</html>
