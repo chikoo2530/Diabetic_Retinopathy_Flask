@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | DR_Predict_AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.85);
+            --fg-primary: #f0f4f8;
+            --fg-secondary: #94a3b8;
+            --fg-muted: #64748b;
+            --accent-primary: #00d4aa;
+            --accent-secondary: #00b4d8;
+            --accent-glow: rgba(0, 212, 170, 0.3);
+            --border-color: rgba(100, 116, 139, 0.2);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            --gradient-accent: linear-gradient(135deg, #00d4aa 0%, #00b4d8 100%);
+            --danger: #f87171;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .overlay-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(0, 180, 216, 0.06) 0%, transparent 50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 3rem;
+            background: rgba(10, 15, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        .nav-links li a {
+            color: var(--fg-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links li a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient-accent);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links li a:hover {
+            color: var(--fg-primary);
+        }
+
+        .nav-links li a:hover::after {
+            width: 100%;
+        }
+
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            border-radius: 8px;
+            color: var(--danger);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(248, 113, 113, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .logout-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+        }
+
+        /* Main Content */
+        .dashboard-content {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 7rem 2rem 3rem;
+        }
+
+        .page-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.75rem, 3vw, 2.25rem);
+            font-weight: 700;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .page-title span {
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Stat Card */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards 0.1s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-accent);
+        }
+
+        .stat-card:hover {
+            border-color: rgba(0, 212, 170, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--accent-primary);
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        /* Table Card */
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards 0.3s;
+            overflow: hidden;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-secondary);
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        thead {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        th {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--fg-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 212, 170, 0.03);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .file-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--fg-secondary);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.35rem 0.6rem;
+            border-radius: 4px;
+            display: inline-block;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .prediction-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .confidence-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .confidence-bar-container {
+            flex: 1;
+            max-width: 100px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-bar-fill {
+            height: 100%;
+            background: var(--gradient-accent);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .confidence-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--fg-primary);
+            min-width: 45px;
+        }
+
+        .date-text {
+            color: var(--fg-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--fg-muted);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--fg-muted);
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem 1.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .dashboard-content {
+                padding: 6rem 1.25rem 2rem;
+            }
+
+            .stat-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+            }
+
+            .table-card {
+                padding: 1.25rem;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+            
+            .page-title, .stat-card, .table-card {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="three-canvas"></canvas>
+<div class="overlay-gradient"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="logo">DR_Predict_AI</div>
+    <div class="nav-right">
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/predict">Prediction</a></li>
+        </ul>
+        <a href="/admin/logout" class="logout-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Logout
+        </a>
+    </div>
+</nav>
+
+<div class="dashboard-content">
+
+    <h2 class="page-title"><span>Admin Dashboard</span></h2>
+
+    <!-- Stats -->
+    <div class="stat-card">
+        <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-label">Total Predictions</div>
+            <div class="stat-value">{{ total }}</div>
+        </div>
+    </div>
+
+    <!-- Recent Predictions -->
+    <div class="table-card">
+        <h3 class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Recent Predictions
+        </h3>
+        
+        {% if recent %}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Image Path</th>
+                        <th>Prediction</th>
+                        <th>Confidence</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in recent %}
+                    <tr>
+                        <td><span class="file-path">{{ row[1] }}</span></td>
+                        <td><span class="prediction-badge">{{ row[2] }}</span></td>
+                        <td>
+                            <div class="confidence-cell">
+                                <div class="confidence-bar-container">
+                                    <div class="confidence-bar-fill" style="width: {{ row[3] }}%;"></div>
+                                </div>
+                                <span class="confidence-text">{{ row[3] }}%</span>
+                            </div>
+                        </td>
+                        <td><span class="date-text">{{ row[4] }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+            <p>No predictions recorded yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Three.js Script -->
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+let scene, camera, renderer, particles, connections;
+let mouseX = 0, mouseY = 0;
+let targetMouseX = 0, targetMouseY = 0;
+const clock = new THREE.Clock();
+
+const config = {
+    particleCount: 80,
+    connectionDistance: 130,
+    particleSize: 2.5,
+    colors: {
+        primary: new THREE.Color(0x00d4aa),
+        secondary: new THREE.Color(0x00b4d8),
+        background: new THREE.Color(0x0a0f1a)
+    }
+};
+
+const particleData = [];
+
+function init() {
+    const canvas = document.getElementById('three-canvas');
+    
+    scene = new THREE.Scene();
+    scene.background = config.colors.background;
+    scene.fog = new THREE.FogExp2(0x0a0f1a, 0.0006);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+    camera.position.z = 600;
+
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true,
+        alpha: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    createParticles();
+    createConnections();
+
+    window.addEventListener('resize', onWindowResize);
+    document.addEventListener('mousemove', onMouseMove);
+
+    animate();
+}
+
+function createParticles() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(config.particleCount * 3);
+    const colors = new Float32Array(config.particleCount * 3);
+    const sizes = new Float32Array(config.particleCount);
+
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        
+        positions[i3] = (Math.random() - 0.5) * window.innerWidth * 1.8;
+        positions[i3 + 1] = (Math.random() - 0.5) * window.innerHeight * 1.8;
+        positions[i3 + 2] = (Math.random() - 0.5) * 1000;
+
+        const mixFactor = Math.random();
+        const color = config.colors.primary.clone().lerp(config.colors.secondary, mixFactor);
+        colors[i3] = color.r;
+        colors[i3 + 1] = color.g;
+        colors[i3 + 2] = color.b;
+
+        sizes[i] = Math.random() * config.particleSize + 1;
+
+        particleData.push({
+            velocity: new THREE.Vector3(
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25,
+                (Math.random() - 0.5) * 0.25
+            ),
+            originalX: positions[i3],
+            originalY: positions[i3 + 1],
+            originalZ: positions[i3 + 2]
+        });
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: renderer.getPixelRatio() }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute vec3 color;
+            varying vec3 vColor;
+            uniform float uTime;
+            uniform float uPixelRatio;
+            
+            void main() {
+                vColor = color;
+                vec3 pos = position;
+                pos.y += sin(uTime * 0.4 + position.x * 0.008) * 8.0;
+                pos.x += cos(uTime * 0.25 + position.y * 0.008) * 8.0;
+                
+                vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                gl_PointSize = size * uPixelRatio * (350.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            
+            void main() {
+                float dist = length(gl_PointCoord - vec2(0.5));
+                if (dist > 0.5) discard;
+                
+                float alpha = 1.0 - smoothstep(0.15, 0.5, dist);
+                vec3 glow = vColor * 1.5;
+                gl_FragColor = vec4(mix(vColor, glow, alpha * 0.5), alpha * 0.75);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createConnections() {
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial({
+        color: 0x00d4aa,
+        transparent: true,
+        opacity: 0.12,
+        blending: THREE.AdditiveBlending
+    });
+
+    connections = new THREE.LineSegments(geometry, material);
+    scene.add(connections);
+}
+
+function updateConnections() {
+    const positions = particles.geometry.attributes.position.array;
+    const linePositions = [];
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const x1 = positions[i3];
+        const y1 = positions[i3 + 1];
+        const z1 = positions[i3 + 2];
+
+        for (let j = i + 1; j < config.particleCount; j++) {
+            const j3 = j * 3;
+            const x2 = positions[j3];
+            const y2 = positions[j3 + 1];
+            const z2 = positions[j3 + 2];
+
+            const distance = Math.sqrt(
+                Math.pow(x2 - x1, 2) +
+                Math.pow(y2 - y1, 2) +
+                Math.pow(z2 - z1, 2)
+            );
+
+            if (distance < config.connectionDistance) {
+                linePositions.push(x1, y1, z1, x2, y2, z2);
+            }
+        }
+    }
+
+    connections.geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(linePositions), 3)
+    );
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onMouseMove(event) {
+    targetMouseX = (event.clientX - window.innerWidth / 2) * 0.4;
+    targetMouseY = (event.clientY - window.innerHeight / 2) * 0.4;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const time = clock.getElapsedTime();
+    
+    mouseX += (targetMouseX - mouseX) * 0.015;
+    mouseY += (targetMouseY - mouseY) * 0.015;
+
+    const positions = particles.geometry.attributes.position.array;
+    
+    for (let i = 0; i < config.particleCount; i++) {
+        const i3 = i * 3;
+        const data = particleData[i];
+
+        positions[i3] += data.velocity.x;
+        positions[i3 + 1] += data.velocity.y;
+        positions[i3 + 2] += data.velocity.z;
+
+        const bounds = 900;
+        if (Math.abs(positions[i3]) > bounds) data.velocity.x *= -1;
+        if (Math.abs(positions[i3 + 1]) > bounds) data.velocity.y *= -1;
+        if (Math.abs(positions[i3 + 2]) > bounds) data.velocity.z *= -1;
+    }
+
+    particles.geometry.attributes.position.needsUpdate = true;
+    particles.material.uniforms.uTime.value = time;
+
+    if (Math.floor(time * 30) % 3 === 0) {
+        updateConnections();
+    }
+
+    camera.position.x += (mouseX * 0.08 - camera.position.x) * 0.015;
+    camera.position.y += (-mouseY * 0.08 - camera.position.y) * 0.015;
+    camera.lookAt(scene.position);
+
+    renderer.render(scene, camera);
+}
+
+init();
+</script>
+
+</body>
+</html>
